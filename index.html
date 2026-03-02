@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mirori — Your Pattern, Gently Revealed</title>
+  <meta name="description" content="Mirori transforms your birth date into a personal fractal mirror — a unique mathematical visualization with procedural audio that belongs only to you.">
+  <meta name="theme-color" content="#0A0A0F">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Mirori — Your Pattern, Gently Revealed">
+  <meta property="og:description" content="A personal fractal mirror born from your birth date. Numerology, generative art, and procedural audio — all on your device, fully private.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mirori.app">
+  <!-- <meta property="og:image" content="https://mirori.app/og-image.png"> -->
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Mirori — Your Pattern, Gently Revealed">
+  <meta name="twitter:description" content="A personal fractal mirror born from your birth date.">
+
+  <!-- Favicon (inline SVG) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230A0A0F' stroke='%236366F1' stroke-width='3'/><circle cx='50' cy='50' r='20' fill='none' stroke='%2322D3EE' stroke-width='2' opacity='0.8'/><circle cx='50' cy='50' r='32' fill='none' stroke='%238B5CF6' stroke-width='1.5' opacity='0.5'/></svg>">
+
+  <style>
+    /* ============================================
+       FONTS
+       ============================================ */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* ============================================
+       RESET & BASE
+       ============================================ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --void-black: #0A0A0F;
+      --void-surface: #1A1A2E;
+      --void-deep: #0F0F1A;
+      --primary-indigo: #6366F1;
+      --primary-cyan: #22D3EE;
+      --primary-purple: #8B5CF6;
+      --text-primary: #E2E8F0;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --glow-indigo: rgba(99, 102, 241, 0.15);
+      --glow-cyan: rgba(34, 211, 238, 0.1);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--void-black);
+      color: var(--text-primary);
+      line-height: 1.7;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ============================================
+       ANIMATED BACKGROUND
+       ============================================ */
+    .bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.3;
+      animation: drift 20s ease-in-out infinite;
+    }
+
+    .bg-orb--indigo {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--primary-indigo), transparent 70%);
+      top: -10%;
+      right: -10%;
+      animation-delay: 0s;
+    }
+
+    .bg-orb--purple {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--primary-purple), transparent 70%);
+      bottom: -15%;
+      left: -10%;
+      animation-delay: -7s;
+    }
+
+    .bg-orb--cyan {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--primary-cyan), transparent 70%);
+      top: 40%;
+      left: 30%;
+      animation-delay: -14s;
+      opacity: 0.15;
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(30px, -20px) scale(1.05); }
+      50% { transform: translate(-20px, 30px) scale(0.95); }
+      75% { transform: translate(10px, 15px) scale(1.02); }
+    }
+
+    /* Subtle grid overlay */
+    .bg-grid {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* ============================================
+       LAYOUT
+       ============================================ */
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section {
+      padding: 100px 0;
+    }
+
+    /* ============================================
+       NAV
+       ============================================ */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 20px 0;
+      transition: all 0.4s ease;
+      backdrop-filter: blur(0px);
+    }
+
+    nav.scrolled {
+      padding: 12px 0;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      background: linear-gradient(135deg, var(--primary-indigo), var(--primary-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      transition: color 0.3s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary-cyan);
+    }
+
+    /* ============================================
+       HERO
+       ============================================ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+    }
+
+    .hero-content {
+      max-width: 720px;
+    }
+
+    /* Animated rings */
+    .hero-rings {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      margin: 0 auto 48px;
+    }
+
+    .hero-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: ring-pulse 6s ease-in-out infinite;
+    }
+
+    .hero-ring--outer {
+      width: 180px;
+      height: 180px;
+      border-color: rgba(99, 102, 241, 0.3);
+      animation-delay: 0s;
+    }
+
+    .hero-ring--mid {
+      width: 120px;
+      height: 120px;
+      border-color: rgba(139, 92, 246, 0.4);
+      animation-delay: -2s;
+    }
+
+    .hero-ring--inner {
+      width: 60px;
+      height: 60px;
+      border-color: rgba(34, 211, 238, 0.5);
+      animation-delay: -4s;
+    }
+
+    .hero-ring--core {
+      width: 12px;
+      height: 12px;
+      border: none;
+      background: radial-gradient(circle, var(--primary-cyan), var(--primary-indigo));
+      box-shadow: 0 0 30px rgba(34, 211, 238, 0.4), 0 0 60px rgba(99, 102, 241, 0.2);
+    }
+
+    @keyframes ring-pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+      50% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--primary-indigo), var(--primary-cyan), var(--primary-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero .subtitle {
+      font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      font-weight: 300;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero .tagline {
+      display: inline-block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      padding: 8px 20px;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 100px;
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    /* Store buttons */
+    .store-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .store-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 28px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      background: rgba(26, 26, 46, 0.6);
+      color: var(--text-primary);
+      backdrop-filter: blur(10px);
+    }
+
+    .store-btn:hover {
+      border-color: var(--primary-indigo);
+      background: rgba(99, 102, 241, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+    }
+
+    .store-btn svg {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .store-btn .store-label {
+      text-align: left;
+      line-height: 1.2;
+    }
+
+    .store-btn .store-label small {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* ============================================
+       SECTION HEADERS
+       ============================================ */
+    .section-label {
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--primary-cyan);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      max-width: 600px;
+      font-weight: 300;
+    }
+
+    /* ============================================
+       HOW IT WORKS
+       ============================================ */
+    .flow {
+      background: linear-gradient(180deg, transparent, rgba(26, 26, 46, 0.3), transparent);
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 64px;
+    }
+
+    .flow-step {
+      position: relative;
+      padding: 40px 32px;
+      border-radius: 20px;
+      background: rgba(26, 26, 46, 0.4);
+      border: 1px solid rgba(99, 102, 241, 0.08);
+      transition: all 0.4s ease;
+    }
+
+    .flow-step:hover {
+      border-color: rgba(99, 102, 241, 0.2);
+      background: rgba(26, 26, 46, 0.6);
+      transform: translateY(-4px);
+    }
+
+    .flow-step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--primary-cyan);
+      margin-bottom: 20px;
+    }
+
+    .flow-step h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .flow-step p {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      font-weight: 300;
+      line-height: 1.65;
+    }
+
+    /* ============================================
+       FEATURES
+       ============================================ */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-top: 64px;
+    }
+
+    .feature-card {
+      padding: 36px 32px;
+      border-radius: 20px;
+      background: rgba(15, 15, 26, 0.6);
+      border: 1px solid rgba(99, 102, 241, 0.06);
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary-indigo), transparent);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .feature-card:hover::before {
+      opacity: 0.5;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(99, 102, 241, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(34, 211, 238, 0.05));
+      border: 1px solid rgba(99, 102, 241, 0.15);
+    }
+
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 300;
+      line-height: 1.65;
+    }
+
+    /* Highlight card */
+    .feature-card--highlight {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.04));
+      border-color: rgba(99, 102, 241, 0.12);
+      text-align: center;
+      padding: 48px 40px;
+    }
+
+    .feature-card--highlight .feature-icon {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ============================================
+       PRIVACY SECTION
+       ============================================ */
+    .privacy-section {
+      text-align: center;
+      background: linear-gradient(180deg, transparent, rgba(26, 26, 46, 0.2), transparent);
+    }
+
+    .privacy-badges {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 48px;
+    }
+
+    .privacy-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      border-radius: 14px;
+      background: rgba(15, 15, 26, 0.6);
+      border: 1px solid rgba(34, 211, 238, 0.1);
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .privacy-badge-icon {
+      font-size: 1.2rem;
+      color: var(--primary-cyan);
+    }
+
+    /* ============================================
+       PRICING
+       ============================================ */
+    .pricing {
+      text-align: center;
+    }
+
+    .pricing-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      max-width: 780px;
+      margin: 48px auto 0;
+    }
+
+    .pricing-card {
+      padding: 40px 32px;
+      border-radius: 20px;
+      border: 1px solid rgba(99, 102, 241, 0.08);
+      background: rgba(15, 15, 26, 0.5);
+      text-align: left;
+    }
+
+    .pricing-card--premium {
+      border-color: rgba(99, 102, 241, 0.3);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05));
+      position: relative;
+    }
+
+    .pricing-card--premium::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--primary-indigo), var(--primary-purple), var(--primary-cyan));
+      z-index: -1;
+      opacity: 0.2;
+    }
+
+    .pricing-tier {
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--primary-cyan);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .pricing-price {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .pricing-price small {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .pricing-note {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .pricing-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pricing-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .pricing-list li::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary-cyan);
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    .pricing-card--premium .pricing-list li::before {
+      background: var(--primary-indigo);
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+    }
+
+    .pricing-promise {
+      margin-top: 32px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ============================================
+       QUOTE / PHILOSOPHY
+       ============================================ */
+    .philosophy {
+      text-align: center;
+      padding: 80px 24px;
+    }
+
+    .philosophy blockquote {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 300;
+      line-height: 1.6;
+      max-width: 640px;
+      margin: 0 auto;
+      color: var(--text-primary);
+    }
+
+    .philosophy blockquote .accent {
+      color: var(--primary-cyan);
+    }
+
+    .philosophy .attribution {
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ============================================
+       FOOTER
+       ============================================ */
+    footer {
+      border-top: 1px solid rgba(99, 102, 241, 0.08);
+      padding: 48px 0;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .footer-brand {
+      font-size: 1.1rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--primary-indigo), var(--primary-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .footer-copy {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.3s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary-cyan);
+    }
+
+    /* ============================================
+       ANIMATIONS — SCROLL REVEAL
+       ============================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Stagger children */
+    .reveal-stagger > * {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal-stagger.visible > *:nth-child(1) { transition-delay: 0.1s; }
+    .reveal-stagger.visible > *:nth-child(2) { transition-delay: 0.2s; }
+    .reveal-stagger.visible > *:nth-child(3) { transition-delay: 0.3s; }
+    .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.4s; }
+    .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.5s; }
+    .reveal-stagger.visible > *:nth-child(6) { transition-delay: 0.6s; }
+
+    .reveal-stagger.visible > * {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 768px) {
+      section {
+        padding: 72px 0;
+      }
+
+      .nav-links {
+        gap: 20px;
+      }
+
+      .flow-steps {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .privacy-badges {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .nav-links {
+        gap: 16px;
+      }
+
+      .nav-links a {
+        font-size: 0.8rem;
+      }
+
+      .store-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .store-btn {
+        width: 100%;
+        max-width: 260px;
+        justify-content: center;
+      }
+    }
+
+    /* ============================================
+       REDUCED MOTION
+       ============================================ */
+    @media (prefers-reduced-motion: reduce) {
+      .bg-orb,
+      .hero-ring {
+        animation: none;
+      }
+
+      .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+
+      .reveal-stagger > * {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+
+      html {
+        scroll-behavior: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background -->
+  <div class="bg-canvas">
+    <div class="bg-orb bg-orb--indigo"></div>
+    <div class="bg-orb bg-orb--purple"></div>
+    <div class="bg-orb bg-orb--cyan"></div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Nav -->
+    <nav id="nav">
+      <div class="nav-inner">
+        <a href="/" class="logo">MIRORI</a>
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="privacy/">Privacy</a></li>
+          <li><a href="mailto:support@mirori.app">Support</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-content">
+        <div class="hero-rings">
+          <div class="hero-ring hero-ring--outer"></div>
+          <div class="hero-ring hero-ring--mid"></div>
+          <div class="hero-ring hero-ring--inner"></div>
+          <div class="hero-ring hero-ring--core"></div>
+        </div>
+
+        <div class="tagline">Your pattern, gently revealed</div>
+
+        <h1>
+          A <span class="gradient-text">fractal mirror</span><br>
+          born from your birth date
+        </h1>
+
+        <p class="subtitle">
+          Mirori transforms your numbers into a personal Mandelbrot fractal,
+          procedural audio, and a deep numerology profile &mdash; all on your device, fully private.
+        </p>
+
+        <div class="store-buttons">
+          <a href="#" class="store-btn" aria-label="Download on the App Store">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            <span class="store-label"><small>Download on the</small>App Store</span>
+          </a>
+          <a href="#" class="store-btn" aria-label="Get it on Google Play">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.807 1.626a1 1 0 0 1 0 1.732l-2.807 1.626L15.206 12l2.492-2.492zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/></svg>
+            <span class="store-label"><small>Get it on</small>Google Play</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="flow" id="how">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">How it works</div>
+          <div class="section-title">Three moments to your mirror</div>
+          <div class="section-desc">No accounts. No setup. Just you and your birth date.</div>
+        </div>
+
+        <div class="flow-steps reveal-stagger">
+          <div class="flow-step">
+            <div class="flow-step-num">01</div>
+            <h3>Enter your birth date</h3>
+            <p>A single date is all Mirori needs. Optionally add your name for deeper expression and soul urge numbers.</p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num">02</div>
+            <h3>Discover your pattern</h3>
+            <p>Your Life Path, archetypes, personal year, and a 14-chapter handbook are calculated instantly &mdash; entirely on your device.</p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num">03</div>
+            <h3>Enter your fractal mirror</h3>
+            <p>A Mandelbrot fractal seeded from your unique numbers, with procedural audio composed from your archetype. Infinite depth, always yours.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+      <div class="container">
+        <div class="reveal" style="text-align: center;">
+          <div class="section-label">What's inside</div>
+          <div class="section-title" style="max-width: 600px; margin: 0 auto 16px;">Everything generated from your numbers</div>
+          <div class="section-desc" style="margin: 0 auto;">No generic content. Every word, color, and frequency is uniquely yours.</div>
+        </div>
+
+        <div class="features-grid reveal-stagger">
+          <div class="feature-card">
+            <div class="feature-icon">&#x2727;</div>
+            <h3>Deep Numerology Profile</h3>
+            <p>Life Path, Expression, Soul Urge, Personality, Birthday Number, Personal Year &mdash; plus primary and shadow archetypes with growth insights.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">&#x2B50;</div>
+            <h3>14-Chapter Personal Handbook</h3>
+            <p>A complete guide to your pattern &mdash; strengths, growth areas, destiny blueprint, and cross-number integration. Written for you, about you.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">&#x29BE;</div>
+            <h3>Personal Fractal Mirror</h3>
+            <p>A Mandelbrot fractal seeded from your Life Path and Expression numbers. Zoom infinitely into a visualization that belongs to no one else.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">&#x266B;</div>
+            <h3>Procedural Audio</h3>
+            <p>Stereo soundscapes synthesized from your archetype &mdash; harmonic series, spectral evolution, ghost chords, and gentle resonance. 12 unique personalities.</p>
+          </div>
+          <div class="feature-card feature-card--highlight">
+            <div class="feature-icon">&#x1F6E1;</div>
+            <h3>Completely Private</h3>
+            <p>No accounts. No servers. No tracking. Your birth data never leaves your device. Mirori works fully offline &mdash; your mirror is yours alone.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section class="privacy-section">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Privacy first</div>
+          <div class="section-title">Your data stays with you. Period.</div>
+          <div class="section-desc" style="margin: 0 auto;">We built Mirori to prove that personal apps don't need your personal data.</div>
+        </div>
+
+        <div class="privacy-badges reveal-stagger">
+          <div class="privacy-badge">
+            <span class="privacy-badge-icon">&#x26D4;</span>
+            No accounts required
+          </div>
+          <div class="privacy-badge">
+            <span class="privacy-badge-icon">&#x1F4F4;</span>
+            Works fully offline
+          </div>
+          <div class="privacy-badge">
+            <span class="privacy-badge-icon">&#x1F6AB;</span>
+            No analytics or tracking
+          </div>
+          <div class="privacy-badge">
+            <span class="privacy-badge-icon">&#x1F512;</span>
+            All data on-device only
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Philosophy -->
+    <section class="philosophy">
+      <div class="container reveal">
+        <blockquote>
+          Patterns <span class="accent">illuminate</span> paths &mdash; never bind.<br>
+          Your choices create your reality.
+        </blockquote>
+        <div class="attribution">&mdash; The voice of Mirori</div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Simple pricing</div>
+          <div class="section-title">One purchase. Yours forever.</div>
+          <div class="section-desc" style="margin: 0 auto;">No subscriptions. No ads. No recurring charges. Ever.</div>
+        </div>
+
+        <div class="pricing-cards reveal-stagger">
+          <div class="pricing-card">
+            <div class="pricing-tier">Free</div>
+            <div class="pricing-price">$0</div>
+            <div class="pricing-note">Forever free</div>
+            <ul class="pricing-list">
+              <li>Full numerology calculation</li>
+              <li>Life Path + primary archetype</li>
+              <li>2 handbook chapters</li>
+              <li>Fractal mirror preview</li>
+              <li>All accessibility settings</li>
+            </ul>
+          </div>
+
+          <div class="pricing-card pricing-card--premium">
+            <div class="pricing-tier">Full Mirror</div>
+            <div class="pricing-price">$7.99 <small>one-time</small></div>
+            <div class="pricing-note">Lifetime access, all future updates included</div>
+            <ul class="pricing-list">
+              <li>Everything in Free</li>
+              <li>All 14 handbook chapters</li>
+              <li>Interactive fractal with infinite zoom</li>
+              <li>Procedural audio soundscape</li>
+              <li>Cross-number integration insights</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pricing-promise reveal">
+          We believe tools for self-knowledge should be accessible.<br>
+          The free tier gives you a genuine experience &mdash; not a teaser.
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="hero" style="min-height: auto; padding: 80px 24px 120px;">
+      <div class="hero-content reveal">
+        <div class="section-title" style="margin-bottom: 16px;">Ready to meet your mirror?</div>
+        <p class="subtitle" style="margin-bottom: 32px;">Your pattern has been waiting.</p>
+        <div class="store-buttons">
+          <a href="#" class="store-btn" aria-label="Download on the App Store">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            <span class="store-label"><small>Download on the</small>App Store</span>
+          </a>
+          <a href="#" class="store-btn" aria-label="Get it on Google Play">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.807 1.626a1 1 0 0 1 0 1.732l-2.807 1.626L15.206 12l2.492-2.492zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/></svg>
+            <span class="store-label"><small>Get it on</small>Google Play</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <div class="footer-inner">
+          <div class="footer-left">
+            <div class="footer-brand">MIRORI</div>
+            <div class="footer-copy">&copy; 2026 Mirori. All rights reserved.</div>
+          </div>
+          <ul class="footer-links">
+            <li><a href="privacy/">Privacy Policy</a></li>
+            <li><a href="mailto:support@mirori.app">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Minimal JS: scroll reveal + nav scroll state -->
+  <script>
+    // Nav scroll effect
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 40);
+    }, { passive: true });
+
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal, .reveal-stagger');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    reveals.forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
